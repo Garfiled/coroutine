@@ -3,6 +3,7 @@
 #include <iostream>
 #include <signal.h>
 #include <string.h>
+#include <time.h>
 
 #include "context.h"
 
@@ -148,6 +149,8 @@ void loop1(void*)
 {
 	while (1)
 	{
+		for (int i=1;i<1000000;i++){
+		}
 		printf("loop1\n");
 	}
 }
@@ -155,6 +158,8 @@ void loop2(void*)
 {
 	while (1)
 	{
+		for (int i=1;i<1000000;i++){
+		}
 		printf("loop2\n");
 	}
 }
@@ -195,18 +200,30 @@ int main(int argc,char** argv)
     go(loop2,NULL);
 
     struct sigaction act;
-
     memset (&act, '\0', sizeof(act));
-
     act.sa_sigaction = &hdl;
-
-    /* The SA_SIGINFO flag tells sigaction() to use the sa_sigaction field, not sa_handler. */
-    act.sa_flags = SA_ONSTACK | SA_SIGINFO ;
-
-    if (sigaction(SIGINT, &act, NULL) < 0) {
+    act.sa_flags = SA_ONSTACK | SA_SIGINFO |SA_RESTART;
+    if (sigaction(SIGUSR1, &act, NULL) < 0) {
        	std::cout << "sigaction err" << std::endl;
         return 1;
     }
+
+	struct sigevent	event;
+	timer_t	timer_id;
+
+	event.sigev_value.sival_ptr = &timer_id;
+	event.sigev_notify = SIGEV_SIGNAL;
+	event.sigev_signo = SIGUSR1;
+	timer_create(CLOCK_REALTIME, &event, &timer_id);
+	struct itimerspec ts;
+	ts.it_interval.tv_sec = 0; // the spacing time
+    ts.it_interval.tv_nsec = 10000000;
+    ts.it_value.tv_sec = 0;  // the delay time start
+    ts.it_value.tv_nsec = 10000000;
+	int ret = timer_settime(timer_id, 0, &ts, NULL);
+	if (ret)
+		printf("set time err:%d",ret);
+
 
     runtime->schedule();
 

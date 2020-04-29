@@ -64,3 +64,4 @@ yield:
 	// 标识是yield返回
 	movl $1,%eax
 	ret
+
